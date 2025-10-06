@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treasure Cove Waterpark - Lifeguard Audit System</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="login-screen" class="login-screen">
+        <div class="login-container">
+            <div class="login-card">
+                <h1>🏊‍♂️ Treasure Cove Lifeguard Audit System</h1>
+                <div id="login-error" class="login-error hidden"></div>
+                <form id="login-form" class="login-form">
+                    <div class="form-group">
+                        <label class="form-label" for="username">Username</label>
+                        <input type="text" id="username" class="form-control" required placeholder="Enter your username">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="password">Password</label>
+                        <input type="password" id="password" class="form-control" required placeholder="Enter your password">
+                    </div>
+                    <button type="submit" class="btn btn--primary btn--full-width">Login</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="main-app" class="hidden">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="container">
+                <div class="header-content">
+                    <h1 class="app-title">🏊‍♂️ Treasure Cove Audit System</h1>
+                    <div class="header-right">
+                        <span class="user-info" id="current-user">Welcome, User</span>
+                        <button class="btn btn--secondary btn--sm" id="logout-btn">Logout</button>
+                    </div>
+                </div>
+                <nav class="main-nav" id="main-nav">
+                    <!-- Navigation will be populated by JavaScript based on user permissions -->
+                </nav>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="content-section active">
+                <div class="container">
+                    <h2>Dashboard</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>Total Lifeguards</h3>
+                            <p class="stat-number" id="total-lifeguards">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Total Audits</h3>
+                            <p class="stat-number" id="total-audits">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>This Month</h3>
+                            <p class="stat-number" id="audits-this-month">0</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Pass Rate</h3>
+                            <p class="stat-number" id="pass-rate">0%</p>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-charts">
+                        <div class="chart-container">
+                            <h3>Recent Audit Results</h3>
+                            <canvas id="results-chart" width="400" height="200"></canvas>
+                        </div>
+                        <div class="recent-activity">
+                            <h3>Recent Activity</h3>
+                            <div id="recent-activity-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Lifeguards Section -->
+            <section id="lifeguards" class="content-section">
+                <div class="container">
+                    <div class="section-header">
+                        <h2>Lifeguard Management</h2>
+                        <div class="section-actions">
+                            <button class="btn btn--primary" id="add-lifeguard-btn" onclick="app.openAddLifeguardModal()">
+                                <i class="icon-plus"></i> Add Lifeguard
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="filters">
+                        <input type="text" id="lifeguard-search" placeholder="Search lifeguards..." class="form-control">
+                        <select id="lifeguard-sort" class="form-control">
+                            <option value="name-asc">Name A-Z</option>
+                            <option value="name-desc">Name Z-A</option>
+                            <option value="date-asc">Hire Date (Oldest)</option>
+                            <option value="date-desc">Hire Date (Newest)</option>
+                        </select>
+                        <select id="status-filter" class="form-control">
+                            <option value="">All Status</option>
+                            <option value="ACTIVE">Active</option>
+                            <option value="INACTIVE">Inactive</option>
+                        </select>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Sheet #</th>
+                                    <th>Name</th>
+                                    <th>Hire Date</th>
+                                    <th>Status</th>
+                                    <th>Total Audits</th>
+                                    <th>Last Audit</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lifeguards-table-body">
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Audits Section -->
+            <section id="audits" class="content-section">
+                <div class="container">
+                    <div class="section-header">
+                        <h2>Audit Management</h2>
+                        <div class="section-actions">
+                            <button class="btn btn--primary" id="add-audit-btn" onclick="app.openAddAuditModal()">
+                                <i class="icon-plus"></i> Add Audit
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="filters">
+                        <input type="text" id="audit-search" placeholder="Search lifeguards..." class="form-control">
+                        <select id="audit-month-filter" class="form-control">
+                            <option value="">All Months</option>
+                            <option value="2025-01">January 2025</option>
+                            <option value="2025-02">February 2025</option>
+                            <option value="2025-03">March 2025</option>
+                            <option value="2025-04">April 2025</option>
+                            <option value="2025-05">May 2025</option>
+                            <option value="2025-06">June 2025</option>
+                            <option value="2025-07">July 2025</option>
+                            <option value="2025-08">August 2025</option>
+                            <option value="2025-09">September 2025</option>
+                            <option value="2025-10">October 2025</option>
+                            <option value="2025-11">November 2025</option>
+                            <option value="2025-12">December 2025</option>
+                        </select>
+                        <select id="audit-type-filter" class="form-control">
+                            <option value="">All Types</option>
+                            <option value="VAT">VAT</option>
+                            <option value="Visual">Visual</option>
+                            <option value="Skill">Skill</option>
+                        </select>
+                        <select id="audit-result-filter" class="form-control">
+                            <option value="">All Results</option>
+                            <option value="EXCEEDS">Exceeds</option>
+                            <option value="MEETS">Meets</option>
+                            <option value="FAILS">Fails</option>
+                        </select>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Lifeguard</th>
+                                    <th>Type</th>
+                                    <th>Result</th>
+                                    <th>Auditor</th>
+                                    <th>Notes</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="audits-table-body">
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Activity Log Section -->
+            <section id="activity-log" class="content-section">
+                <div class="container">
+                    <div class="section-header">
+                        <h2>Activity Log</h2>
+                        <div class="section-actions">
+                            <button class="btn btn--secondary" onclick="app.clearActivityLog()">
+                                <i class="icon-trash"></i> Clear Log
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="filters">
+                        <input type="text" id="activity-search" placeholder="Search activities..." class="form-control">
+                        <select id="activity-type-filter" class="form-control">
+                            <option value="">All Actions</option>
+                            <option value="LOGIN">Login</option>
+                            <option value="LOGOUT">Logout</option>
+                            <option value="CREATE_AUDIT">Create Audit</option>
+                            <option value="EDIT_AUDIT">Edit Audit</option>
+                            <option value="DELETE_AUDIT">Delete Audit</option>
+                            <option value="CREATE_LIFEGUARD">Create Lifeguard</option>
+                            <option value="EDIT_LIFEGUARD">Edit Lifeguard</option>
+                            <option value="DELETE_LIFEGUARD">Delete Lifeguard</option>
+                        </select>
+                    </div>
+
+                    <div class="activity-log-container" id="activity-log-content">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- User Management Section -->
+            <section id="user-management" class="content-section">
+                <div class="container">
+                    <div class="section-header">
+                        <h2>User Management</h2>
+                        <div class="section-actions">
+                            <button class="btn btn--primary" id="add-user-btn" onclick="app.openAddUserModal()">
+                                <i class="icon-plus"></i> Add User
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Last Login</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body">
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal Container -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+        <div class="modal-content" id="modal-content">
+            <!-- Modal content will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
