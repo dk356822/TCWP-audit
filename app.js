@@ -1,11 +1,11 @@
-// Complete Lifeguard Audit System with WORKING Edit Features
+// Complete Lifeguard Audit System with DATA PERSISTENCE
 let app; // Global app reference
 
 class LifeguardAuditApp {
     constructor() {
-        console.log('Initializing LifeguardAuditApp with Working Edit Features');
+        console.log('Initializing LifeguardAuditApp with Data Persistence');
         
-        // Load complete system data
+        // Load system data (with localStorage persistence)
         this.loadSystemData();
         
         // Session management
@@ -31,11 +31,52 @@ class LifeguardAuditApp {
         this.init();
     }
 
+    // =======================================
+    // DATA PERSISTENCE METHODS
+    // =======================================
+
+    saveToLocalStorage(key, data) {
+        try {
+            localStorage.setItem(`treasureCove_${key}`, JSON.stringify(data));
+            console.log(`Saved ${key} to localStorage`);
+        } catch (error) {
+            console.error(`Error saving ${key} to localStorage:`, error);
+        }
+    }
+
+    loadFromLocalStorage(key, defaultData = null) {
+        try {
+            const stored = localStorage.getItem(`treasureCove_${key}`);
+            if (stored) {
+                const data = JSON.parse(stored);
+                console.log(`Loaded ${key} from localStorage`);
+                return data;
+            }
+        } catch (error) {
+            console.error(`Error loading ${key} from localStorage:`, error);
+        }
+        return defaultData;
+    }
+
     loadSystemData() {
-        console.log('Loading enhanced system data...');
+        console.log('Loading system data with persistence...');
         
-        // EXACT USERS from provided data - CASE SENSITIVE MATCHING
-        this.users = [
+        // Try to load from localStorage first, otherwise use defaults
+        this.users = this.loadFromLocalStorage('users', this.getDefaultUsers());
+        this.lifeguards = this.loadFromLocalStorage('lifeguards', this.getDefaultLifeguards());
+        this.audits = this.loadFromLocalStorage('audits', this.getDefaultAudits());
+        this.activityLog = this.loadFromLocalStorage('activityLog', this.getDefaultActivityLog());
+
+        console.log('System data loaded:', {
+            users: this.users.length,
+            lifeguards: this.lifeguards.length,
+            audits: this.audits.length,
+            activities: this.activityLog.length
+        });
+    }
+
+    getDefaultUsers() {
+        return [
             {
                 id: 1, username: "Demetrius Lopez", role: "SENIOR_ADMIN", password: "demetrius2025", 
                 active: true, created_by: "System", created_date: "2025-01-01", last_login: "2025-10-04",
@@ -117,10 +158,10 @@ class LifeguardAuditApp {
                 }
             }
         ];
+    }
 
-        console.log('Loaded users:', this.users.map(u => `${u.username} (${u.role})`));
-
-        this.lifeguards = [
+    getDefaultLifeguards() {
+        return [
             {"sheet_number":"01","sheet_name":"Lifeguard_Audit_Sheet_01","lifeguard_name":"MIA FIGUEROA","active":true,"hire_date":"2025-01-01","status":"ACTIVE"},
             {"sheet_number":"02","sheet_name":"Lifeguard_Audit_Sheet_02","lifeguard_name":"NATHAN RAMLAKHAN","active":true,"hire_date":"2025-01-01","status":"ACTIVE"},
             {"sheet_number":"03","sheet_name":"Lifeguard_Audit_Sheet_03","lifeguard_name":"JASON MOLL","active":true,"hire_date":"2025-01-01","status":"ACTIVE"},
@@ -132,25 +173,25 @@ class LifeguardAuditApp {
             {"sheet_number":"09","sheet_name":"Lifeguard_Audit_Sheet_09","lifeguard_name":"SOFIA GARCIA","active":true,"hire_date":"2025-03-01","status":"ACTIVE"},
             {"sheet_number":"10","sheet_name":"Lifeguard_Audit_Sheet_10","lifeguard_name":"MIGUEL SANTOS","active":true,"hire_date":"2025-03-15","status":"ACTIVE"}
         ];
+    }
 
-        // Enhanced audit data with more entries for monthly statistics
-        this.audits = [
+    getDefaultAudits() {
+        return [
             {"id":1,"lifeguard_name":"MIA FIGUEROA","date":"2025-07-15","time":"10:30:00","audit_type":"Visual","skill_detail":"","auditor_name":"Asael Gomez","result":"EXCEEDS","notes":"Excellent awareness","follow_up":"","created_by":"Asael Gomez","created_date":"2025-07-15 10:30:00","last_edited_by":null,"last_edited_date":null},
             {"id":2,"lifeguard_name":"NATHAN RAMLAKHAN","date":"2025-08-01","time":"14:15:00","audit_type":"VAT","skill_detail":"","auditor_name":"Matthew Hills","result":"MEETS","notes":"Good technique","follow_up":"","created_by":"Demetrius Lopez","created_date":"2025-08-01 14:15:00","last_edited_by":null,"last_edited_date":null},
             {"id":3,"lifeguard_name":"JASON MOLL","date":"2025-09-10","time":"11:45:00","audit_type":"Skill","skill_detail":"CPR","auditor_name":"Xavier Butler Lee","result":"EXCEEDS","notes":"Perfect execution","follow_up":"","created_by":"Xavier Butler Lee","created_date":"2025-09-10 11:45:00","last_edited_by":null,"last_edited_date":null},
             {"id":4,"lifeguard_name":"JAVIAN QUIÑONES","date":"2025-09-20","time":"09:30:00","audit_type":"Visual","skill_detail":"","auditor_name":"Kyarra Cruz","result":"EXCEEDS","notes":"Outstanding performance","follow_up":"","created_by":"Kyarra Cruz","created_date":"2025-09-20 09:30:00","last_edited_by":null,"last_edited_date":null},
             {"id":5,"lifeguard_name":"LUCCA CONCEICAO","date":"2025-10-01","time":"16:00:00","audit_type":"Skill","skill_detail":"First Aid","auditor_name":"Vi'Andre Butts","result":"MEETS","notes":"Good knowledge","follow_up":"Practice bandaging","created_by":"Vi'Andre Butts","created_date":"2025-10-01 16:00:00","last_edited_by":null,"last_edited_date":null},
-            
-            // Additional audits for better monthly statistics
             {"id":6,"lifeguard_name":"MIA FIGUEROA","date":"2025-08-15","time":"14:30:00","audit_type":"VAT","skill_detail":"","auditor_name":"Matthew Hills","result":"EXCEEDS","notes":"Excellent positioning","follow_up":"","created_by":"Matthew Hills","created_date":"2025-08-15 14:30:00","last_edited_by":null,"last_edited_date":null},
             {"id":7,"lifeguard_name":"SAMUEL TORRES","date":"2025-09-05","time":"10:15:00","audit_type":"Visual","skill_detail":"","auditor_name":"Asael Gomez","result":"MEETS","notes":"Good scanning technique","follow_up":"","created_by":"Asael Gomez","created_date":"2025-09-05 10:15:00","last_edited_by":null,"last_edited_date":null},
             {"id":8,"lifeguard_name":"ISABELLA MARTINEZ","date":"2025-09-25","time":"13:45:00","audit_type":"Skill","skill_detail":"Rescue Tube","auditor_name":"Xavier Butler Lee","result":"EXCEEDS","notes":"Flawless rescue technique","follow_up":"","created_by":"Xavier Butler Lee","created_date":"2025-09-25 13:45:00","last_edited_by":null,"last_edited_date":null},
             {"id":9,"lifeguard_name":"CARLOS RODRIGUEZ","date":"2025-10-03","time":"11:00:00","audit_type":"Visual","skill_detail":"","auditor_name":"Kyarra Cruz","result":"MEETS","notes":"Adequate performance","follow_up":"","created_by":"Kyarra Cruz","created_date":"2025-10-03 11:00:00","last_edited_by":null,"last_edited_date":null},
             {"id":10,"lifeguard_name":"SOFIA GARCIA","date":"2025-10-05","time":"15:30:00","audit_type":"VAT","skill_detail":"","auditor_name":"Vi'Andre Butts","result":"EXCEEDS","notes":"Perfect vigilance","follow_up":"","created_by":"Vi'Andre Butts","created_date":"2025-10-05 15:30:00","last_edited_by":null,"last_edited_date":null}
         ];
+    }
 
-        // Activity log
-        this.activityLog = [
+    getDefaultActivityLog() {
+        return [
             { id: 1, timestamp: '2025-10-06 12:00:00', user: 'Demetrius Lopez', action: 'LOGIN', details: 'User logged in' },
             { id: 2, timestamp: '2025-10-05 18:45:00', user: 'Asael Gomez', action: 'CREATE_AUDIT', details: 'Created audit for MIA FIGUEROA' },
             { id: 3, timestamp: '2025-10-05 18:30:00', user: 'Matthew Hills', action: 'EDIT_AUDIT', details: 'Edited audit #2' },
@@ -160,9 +201,19 @@ class LifeguardAuditApp {
             { id: 7, timestamp: '2025-10-05 17:30:00', user: 'Demetrius Lopez', action: 'EDIT_AUDIT', details: 'Updated audit result for CARLOS RODRIGUEZ' },
             { id: 8, timestamp: '2025-10-05 17:15:00', user: 'Asael Gomez', action: 'VIEW_MONTHLY_STATS', details: 'Viewed monthly statistics for September' }
         ];
-        
-        console.log('Enhanced system data loaded successfully');
     }
+
+    // Save data whenever changes are made
+    saveAllData() {
+        this.saveToLocalStorage('users', this.users);
+        this.saveToLocalStorage('lifeguards', this.lifeguards);
+        this.saveToLocalStorage('audits', this.audits);
+        this.saveToLocalStorage('activityLog', this.activityLog);
+    }
+
+    // =======================================
+    // EXISTING APPLICATION CODE
+    // =======================================
 
     init() {
         console.log('Initializing application...');
@@ -287,7 +338,10 @@ class LifeguardAuditApp {
             if (user) {
                 console.log('Login successful for user:', user.username);
                 this.currentUser = user;
+                // Update last login time and save
+                user.last_login = new Date().toISOString().split('T')[0];
                 this.logActivity('LOGIN', `${user.role} login`);
+                this.saveAllData(); // Save after login
                 this.showMainApp();
             } else {
                 console.log('Login failed - no matching user found');
@@ -768,7 +822,7 @@ class LifeguardAuditApp {
     }
 
     // =======================================
-    // WORKING EDIT MODAL FUNCTIONS
+    // WORKING EDIT MODAL FUNCTIONS WITH PERSISTENCE
     // =======================================
 
     // AUDIT MODALS
@@ -1004,7 +1058,7 @@ class LifeguardAuditApp {
         } else {
             // Create new audit
             const newAudit = {
-                id: Math.max(...this.audits.map(a => a.id)) + 1,
+                id: Math.max(...this.audits.map(a => a.id), 0) + 1,
                 lifeguard_name: lifeguardName,
                 date: date,
                 time: time,
@@ -1025,6 +1079,9 @@ class LifeguardAuditApp {
             this.showToast('Audit created successfully', 'success');
         }
         
+        // SAVE TO LOCALSTORAGE
+        this.saveAllData();
+        
         this.closeModal();
         this.loadAudits(); // Refresh the table
     }
@@ -1036,7 +1093,7 @@ class LifeguardAuditApp {
         this.editingType = 'lifeguard';
         
         // Get next sheet number
-        const maxSheetNumber = Math.max(...this.lifeguards.map(lg => parseInt(lg.sheet_number)));
+        const maxSheetNumber = Math.max(...this.lifeguards.map(lg => parseInt(lg.sheet_number)), 0);
         const nextSheetNumber = String(maxSheetNumber + 1).padStart(2, '0');
         
         const modalContent = `
@@ -1176,6 +1233,9 @@ class LifeguardAuditApp {
             this.logActivity('CREATE_LIFEGUARD', `Added new lifeguard ${name} (Sheet ${sheetNumber})`);
             this.showToast('Lifeguard created successfully', 'success');
         }
+        
+        // SAVE TO LOCALSTORAGE
+        this.saveAllData();
         
         this.closeModal();
         this.loadLifeguards(); // Refresh the table
@@ -1423,7 +1483,7 @@ class LifeguardAuditApp {
         } else {
             // Create new user
             const newUser = {
-                id: Math.max(...this.users.map(u => u.id)) + 1,
+                id: Math.max(...this.users.map(u => u.id), 0) + 1,
                 username: username,
                 role: role,
                 password: password,
@@ -1438,6 +1498,9 @@ class LifeguardAuditApp {
             this.logActivity('CREATE_USER', `Created new user ${username}`);
             this.showToast('User created successfully', 'success');
         }
+        
+        // SAVE TO LOCALSTORAGE
+        this.saveAllData();
         
         this.closeModal();
         this.loadUserManagement(); // Refresh the table
@@ -1618,6 +1681,10 @@ class LifeguardAuditApp {
                 const lifeguard = this.lifeguards[lifeguardIndex];
                 this.lifeguards.splice(lifeguardIndex, 1);
                 this.logActivity('DELETE_LIFEGUARD', `Deleted lifeguard ${lifeguard.lifeguard_name} (Sheet ${sheetNumber})`);
+                
+                // SAVE TO LOCALSTORAGE
+                this.saveAllData();
+                
                 this.showToast('Lifeguard deleted successfully', 'success');
                 this.loadLifeguards();
             }
@@ -1639,6 +1706,10 @@ class LifeguardAuditApp {
             if (confirm(`Are you sure you want to ${action} ${user.username}?`)) {
                 user.active = !user.active;
                 this.logActivity('TOGGLE_USER_STATUS', `${action.charAt(0).toUpperCase() + action.slice(1)}d user: ${user.username}`);
+                
+                // SAVE TO LOCALSTORAGE
+                this.saveAllData();
+                
                 this.loadUserManagement();
                 this.showToast(`${user.username} ${action}d successfully`, 'success');
             }
@@ -1648,6 +1719,10 @@ class LifeguardAuditApp {
     clearActivityLog() {
         if (confirm('Are you sure you want to clear the activity log?')) {
             this.activityLog = [];
+            
+            // SAVE TO LOCALSTORAGE
+            this.saveAllData();
+            
             this.loadActivityLog();
             this.showToast('Activity log cleared', 'success');
         }
@@ -1723,7 +1798,7 @@ class LifeguardAuditApp {
         if (!this.currentUser) return;
         
         const newActivity = {
-            id: Math.max(...this.activityLog.map(a => a.id)) + 1,
+            id: Math.max(...this.activityLog.map(a => a.id), 0) + 1,
             timestamp: new Date().toISOString(),
             user: this.currentUser.username,
             action: action,
@@ -1736,6 +1811,9 @@ class LifeguardAuditApp {
         if (this.activityLog.length > 100) {
             this.activityLog = this.activityLog.slice(0, 100);
         }
+        
+        // SAVE TO LOCALSTORAGE
+        this.saveAllData();
         
         console.log('Activity logged:', newActivity);
     }
@@ -1762,6 +1840,6 @@ class LifeguardAuditApp {
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM loaded, initializing complete lifeguard audit system with working edit features...');
+    console.log('DOM loaded, initializing complete lifeguard audit system with data persistence...');
     app = new LifeguardAuditApp();
 });
