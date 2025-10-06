@@ -1,9 +1,9 @@
-// Complete Lifeguard Audit System with Enhanced Monthly Statistics
+// Complete Lifeguard Audit System with WORKING Edit Features
 let app; // Global app reference
 
 class LifeguardAuditApp {
     constructor() {
-        console.log('Initializing LifeguardAuditApp with Enhanced Monthly Statistics');
+        console.log('Initializing LifeguardAuditApp with Working Edit Features');
         
         // Load complete system data
         this.loadSystemData();
@@ -20,6 +20,10 @@ class LifeguardAuditApp {
             users: { search: '', role: 'all', status: 'all' },
             activity: { search: '', action: 'all' }
         };
+
+        // Editing state
+        this.editingItem = null;
+        this.editingType = null;
 
         // Charts
         this.monthlyChart = null;
@@ -147,7 +151,7 @@ class LifeguardAuditApp {
 
         // Activity log
         this.activityLog = [
-            { id: 1, timestamp: '2025-10-06 10:00:00', user: 'Demetrius Lopez', action: 'LOGIN', details: 'User logged in' },
+            { id: 1, timestamp: '2025-10-06 12:00:00', user: 'Demetrius Lopez', action: 'LOGIN', details: 'User logged in' },
             { id: 2, timestamp: '2025-10-05 18:45:00', user: 'Asael Gomez', action: 'CREATE_AUDIT', details: 'Created audit for MIA FIGUEROA' },
             { id: 3, timestamp: '2025-10-05 18:30:00', user: 'Matthew Hills', action: 'EDIT_AUDIT', details: 'Edited audit #2' },
             { id: 4, timestamp: '2025-10-05 18:15:00', user: 'Xavier Butler Lee', action: 'CREATE_LIFEGUARD', details: 'Added new lifeguard SAMUEL TORRES' },
@@ -185,6 +189,9 @@ class LifeguardAuditApp {
             // Setup logout functionality
             this.setupLogoutButton();
             
+            // Setup modal close functionality
+            this.setupModalHandlers();
+            
             // Show login screen initially
             this.showLoginScreen();
             
@@ -192,6 +199,22 @@ class LifeguardAuditApp {
         } catch (error) {
             console.error('Error during application setup:', error);
         }
+    }
+
+    setupModalHandlers() {
+        // Click outside modal to close
+        document.addEventListener('click', (e) => {
+            if (e.target.id === 'modal-overlay') {
+                this.closeModal();
+            }
+        });
+
+        // Escape key to close modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                this.closeModal();
+            }
+        });
     }
 
     setupLoginForm() {
@@ -744,6 +767,682 @@ class LifeguardAuditApp {
         console.log('Setting up filter listeners');
     }
 
+    // =======================================
+    // WORKING EDIT MODAL FUNCTIONS
+    // =======================================
+
+    // AUDIT MODALS
+    openAddAuditModal() {
+        console.log('Opening Add Audit Modal');
+        this.editingItem = null;
+        this.editingType = 'audit';
+        
+        const adminUsers = this.users.filter(u => ['ADMIN', 'SENIOR_ADMIN'].includes(u.role) && u.active);
+        
+        const modalContent = `
+            <div class="modal-header">
+                <h2>Add New Audit</h2>
+                <button class="modal-close" onclick="app.closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="audit-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="audit-lifeguard">Lifeguard *</label>
+                            <select id="audit-lifeguard" class="form-control" required>
+                                <option value="">Select Lifeguard</option>
+                                ${this.lifeguards.filter(lg => lg.active).map(lg => 
+                                    `<option value="${lg.lifeguard_name}">${lg.lifeguard_name}</option>`
+                                ).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="audit-auditor">Auditor *</label>
+                            <select id="audit-auditor" class="form-control" required>
+                                <option value="">Select Auditor</option>
+                                ${adminUsers.map(user => 
+                                    `<option value="${user.username}">${user.username}</option>`
+                                ).join('')}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="audit-date">Date *</label>
+                            <input type="date" id="audit-date" class="form-control" required value="${new Date().toISOString().split('T')[0]}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="audit-time">Time *</label>
+                            <input type="time" id="audit-time" class="form-control" required value="${new Date().toTimeString().substring(0,5)}">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="audit-type">Audit Type *</label>
+                            <select id="audit-type" class="form-control" required>
+                                <option value="">Select Type</option>
+                                <option value="Visual">Visual</option>
+                                <option value="VAT">VAT</option>
+                                <option value="Skill">Skill</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="audit-skill">Skill Detail</label>
+                            <input type="text" id="audit-skill" class="form-control" placeholder="e.g., CPR, First Aid">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="audit-result">Result *</label>
+                        <select id="audit-result" class="form-control" required>
+                            <option value="">Select Result</option>
+                            <option value="EXCEEDS">Exceeds</option>
+                            <option value="MEETS">Meets</option>
+                            <option value="FAILS">Fails</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="audit-notes">Notes</label>
+                        <textarea id="audit-notes" class="form-control" rows="3" placeholder="Additional observations or comments"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="audit-followup">Follow-up Required</label>
+                        <textarea id="audit-followup" class="form-control" rows="2" placeholder="Any follow-up actions needed"></textarea>
+                    </div>
+                </form>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn--secondary" onclick="app.closeModal()">Cancel</button>
+                    <button type="button" class="btn btn--primary" onclick="app.saveAudit()">Save Audit</button>
+                </div>
+            </div>
+        `;
+        
+        this.showModal(modalContent);
+    }
+
+    openEditAuditModal(auditId) {
+        console.log('Opening Edit Audit Modal for ID:', auditId);
+        const audit = this.audits.find(a => a.id === auditId);
+        if (!audit) {
+            this.showToast('Audit not found', 'error');
+            return;
+        }
+        
+        this.editingItem = audit;
+        this.editingType = 'audit';
+        
+        const adminUsers = this.users.filter(u => ['ADMIN', 'SENIOR_ADMIN'].includes(u.role) && u.active);
+        
+        const modalContent = `
+            <div class="modal-header">
+                <h2>Edit Audit #${audit.id}</h2>
+                <button class="modal-close" onclick="app.closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="audit-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="audit-lifeguard">Lifeguard *</label>
+                            <select id="audit-lifeguard" class="form-control" required>
+                                <option value="">Select Lifeguard</option>
+                                ${this.lifeguards.filter(lg => lg.active).map(lg => 
+                                    `<option value="${lg.lifeguard_name}" ${audit.lifeguard_name === lg.lifeguard_name ? 'selected' : ''}>${lg.lifeguard_name}</option>`
+                                ).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="audit-auditor">Auditor *</label>
+                            <select id="audit-auditor" class="form-control" required>
+                                <option value="">Select Auditor</option>
+                                ${adminUsers.map(user => 
+                                    `<option value="${user.username}" ${audit.auditor_name === user.username ? 'selected' : ''}>${user.username}</option>`
+                                ).join('')}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="audit-date">Date *</label>
+                            <input type="date" id="audit-date" class="form-control" required value="${audit.date}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="audit-time">Time *</label>
+                            <input type="time" id="audit-time" class="form-control" required value="${audit.time}">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="audit-type">Audit Type *</label>
+                            <select id="audit-type" class="form-control" required>
+                                <option value="">Select Type</option>
+                                <option value="Visual" ${audit.audit_type === 'Visual' ? 'selected' : ''}>Visual</option>
+                                <option value="VAT" ${audit.audit_type === 'VAT' ? 'selected' : ''}>VAT</option>
+                                <option value="Skill" ${audit.audit_type === 'Skill' ? 'selected' : ''}>Skill</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="audit-skill">Skill Detail</label>
+                            <input type="text" id="audit-skill" class="form-control" placeholder="e.g., CPR, First Aid" value="${audit.skill_detail || ''}">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="audit-result">Result *</label>
+                        <select id="audit-result" class="form-control" required>
+                            <option value="">Select Result</option>
+                            <option value="EXCEEDS" ${audit.result === 'EXCEEDS' ? 'selected' : ''}>Exceeds</option>
+                            <option value="MEETS" ${audit.result === 'MEETS' ? 'selected' : ''}>Meets</option>
+                            <option value="FAILS" ${audit.result === 'FAILS' ? 'selected' : ''}>Fails</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="audit-notes">Notes</label>
+                        <textarea id="audit-notes" class="form-control" rows="3" placeholder="Additional observations or comments">${audit.notes || ''}</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="audit-followup">Follow-up Required</label>
+                        <textarea id="audit-followup" class="form-control" rows="2" placeholder="Any follow-up actions needed">${audit.follow_up || ''}</textarea>
+                    </div>
+                </form>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn--secondary" onclick="app.closeModal()">Cancel</button>
+                    <button type="button" class="btn btn--primary" onclick="app.saveAudit()">Update Audit</button>
+                </div>
+            </div>
+        `;
+        
+        this.showModal(modalContent);
+    }
+
+    saveAudit() {
+        console.log('Saving audit...');
+        
+        // Get form data
+        const lifeguardName = document.getElementById('audit-lifeguard').value;
+        const auditorName = document.getElementById('audit-auditor').value;
+        const date = document.getElementById('audit-date').value;
+        const time = document.getElementById('audit-time').value;
+        const auditType = document.getElementById('audit-type').value;
+        const skillDetail = document.getElementById('audit-skill').value;
+        const result = document.getElementById('audit-result').value;
+        const notes = document.getElementById('audit-notes').value;
+        const followUp = document.getElementById('audit-followup').value;
+        
+        // Validate required fields
+        if (!lifeguardName || !auditorName || !date || !time || !auditType || !result) {
+            this.showToast('Please fill in all required fields', 'error');
+            return;
+        }
+        
+        if (this.editingItem) {
+            // Update existing audit
+            const audit = this.editingItem;
+            audit.lifeguard_name = lifeguardName;
+            audit.auditor_name = auditorName;
+            audit.date = date;
+            audit.time = time;
+            audit.audit_type = auditType;
+            audit.skill_detail = skillDetail;
+            audit.result = result;
+            audit.notes = notes;
+            audit.follow_up = followUp;
+            audit.last_edited_by = this.currentUser.username;
+            audit.last_edited_date = new Date().toISOString();
+            
+            this.logActivity('EDIT_AUDIT', `Updated audit #${audit.id} for ${lifeguardName}`);
+            this.showToast('Audit updated successfully', 'success');
+        } else {
+            // Create new audit
+            const newAudit = {
+                id: Math.max(...this.audits.map(a => a.id)) + 1,
+                lifeguard_name: lifeguardName,
+                date: date,
+                time: time,
+                audit_type: auditType,
+                skill_detail: skillDetail,
+                auditor_name: auditorName,
+                result: result,
+                notes: notes,
+                follow_up: followUp,
+                created_by: this.currentUser.username,
+                created_date: new Date().toISOString(),
+                last_edited_by: null,
+                last_edited_date: null
+            };
+            
+            this.audits.push(newAudit);
+            this.logActivity('CREATE_AUDIT', `Created new audit for ${lifeguardName}`);
+            this.showToast('Audit created successfully', 'success');
+        }
+        
+        this.closeModal();
+        this.loadAudits(); // Refresh the table
+    }
+
+    // LIFEGUARD MODALS
+    openAddLifeguardModal() {
+        console.log('Opening Add Lifeguard Modal');
+        this.editingItem = null;
+        this.editingType = 'lifeguard';
+        
+        // Get next sheet number
+        const maxSheetNumber = Math.max(...this.lifeguards.map(lg => parseInt(lg.sheet_number)));
+        const nextSheetNumber = String(maxSheetNumber + 1).padStart(2, '0');
+        
+        const modalContent = `
+            <div class="modal-header">
+                <h2>Add New Lifeguard</h2>
+                <button class="modal-close" onclick="app.closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="lifeguard-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="lifeguard-sheet">Sheet Number *</label>
+                            <input type="text" id="lifeguard-sheet" class="form-control" required value="${nextSheetNumber}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="lifeguard-name">Full Name *</label>
+                            <input type="text" id="lifeguard-name" class="form-control" required placeholder="Enter full name in CAPS">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="lifeguard-hire-date">Hire Date *</label>
+                            <input type="date" id="lifeguard-hire-date" class="form-control" required value="${new Date().toISOString().split('T')[0]}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="lifeguard-status">Status *</label>
+                            <select id="lifeguard-status" class="form-control" required>
+                                <option value="ACTIVE" selected>Active</option>
+                                <option value="INACTIVE">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn--secondary" onclick="app.closeModal()">Cancel</button>
+                    <button type="button" class="btn btn--primary" onclick="app.saveLifeguard()">Save Lifeguard</button>
+                </div>
+            </div>
+        `;
+        
+        this.showModal(modalContent);
+    }
+
+    openEditLifeguardModal(sheetNumber) {
+        console.log('Opening Edit Lifeguard Modal for sheet:', sheetNumber);
+        const lifeguard = this.lifeguards.find(lg => lg.sheet_number === sheetNumber);
+        if (!lifeguard) {
+            this.showToast('Lifeguard not found', 'error');
+            return;
+        }
+        
+        this.editingItem = lifeguard;
+        this.editingType = 'lifeguard';
+        
+        const modalContent = `
+            <div class="modal-header">
+                <h2>Edit Lifeguard - Sheet ${lifeguard.sheet_number}</h2>
+                <button class="modal-close" onclick="app.closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="lifeguard-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="lifeguard-sheet">Sheet Number *</label>
+                            <input type="text" id="lifeguard-sheet" class="form-control" required value="${lifeguard.sheet_number}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="lifeguard-name">Full Name *</label>
+                            <input type="text" id="lifeguard-name" class="form-control" required placeholder="Enter full name in CAPS" value="${lifeguard.lifeguard_name}">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="lifeguard-hire-date">Hire Date *</label>
+                            <input type="date" id="lifeguard-hire-date" class="form-control" required value="${lifeguard.hire_date}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="lifeguard-status">Status *</label>
+                            <select id="lifeguard-status" class="form-control" required>
+                                <option value="ACTIVE" ${lifeguard.status === 'ACTIVE' ? 'selected' : ''}>Active</option>
+                                <option value="INACTIVE" ${lifeguard.status === 'INACTIVE' ? 'selected' : ''}>Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn--secondary" onclick="app.closeModal()">Cancel</button>
+                    <button type="button" class="btn btn--primary" onclick="app.saveLifeguard()">Update Lifeguard</button>
+                </div>
+            </div>
+        `;
+        
+        this.showModal(modalContent);
+    }
+
+    saveLifeguard() {
+        console.log('Saving lifeguard...');
+        
+        // Get form data
+        const sheetNumber = document.getElementById('lifeguard-sheet').value;
+        const name = document.getElementById('lifeguard-name').value.trim().toUpperCase();
+        const hireDate = document.getElementById('lifeguard-hire-date').value;
+        const status = document.getElementById('lifeguard-status').value;
+        
+        // Validate required fields
+        if (!sheetNumber || !name || !hireDate || !status) {
+            this.showToast('Please fill in all required fields', 'error');
+            return;
+        }
+        
+        if (this.editingItem) {
+            // Update existing lifeguard
+            const lifeguard = this.editingItem;
+            lifeguard.lifeguard_name = name;
+            lifeguard.hire_date = hireDate;
+            lifeguard.status = status;
+            lifeguard.active = status === 'ACTIVE';
+            
+            this.logActivity('EDIT_LIFEGUARD', `Updated lifeguard ${name} (Sheet ${sheetNumber})`);
+            this.showToast('Lifeguard updated successfully', 'success');
+        } else {
+            // Create new lifeguard
+            const newLifeguard = {
+                sheet_number: sheetNumber,
+                sheet_name: `Lifeguard_Audit_Sheet_${sheetNumber}`,
+                lifeguard_name: name,
+                active: status === 'ACTIVE',
+                hire_date: hireDate,
+                status: status
+            };
+            
+            this.lifeguards.push(newLifeguard);
+            this.logActivity('CREATE_LIFEGUARD', `Added new lifeguard ${name} (Sheet ${sheetNumber})`);
+            this.showToast('Lifeguard created successfully', 'success');
+        }
+        
+        this.closeModal();
+        this.loadLifeguards(); // Refresh the table
+    }
+
+    // USER MODALS
+    openAddUserModal() {
+        console.log('Opening Add User Modal');
+        this.editingItem = null;
+        this.editingType = 'user';
+        
+        const modalContent = `
+            <div class="modal-header">
+                <h2>Add New User</h2>
+                <button class="modal-close" onclick="app.closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="user-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="user-username">Username *</label>
+                            <input type="text" id="user-username" class="form-control" required placeholder="Enter full name">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="user-password">Password *</label>
+                            <input type="password" id="user-password" class="form-control" required placeholder="Enter password">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="user-role">Role *</label>
+                        <select id="user-role" class="form-control" required>
+                            <option value="">Select Role</option>
+                            <option value="ADMIN">Admin</option>
+                            <option value="VIEWER">Viewer</option>
+                        </select>
+                    </div>
+                    
+                    <div class="permissions-section">
+                        <h4>Individual Permissions</h4>
+                        <div class="permissions-grid">
+                            <label class="permission-item">
+                                <input type="checkbox" id="perm-manage-users"> Manage Users
+                            </label>
+                            <label class="permission-item">
+                                <input type="checkbox" id="perm-create-users"> Create Users
+                            </label>
+                            <label class="permission-item">
+                                <input type="checkbox" id="perm-deactivate-users"> Deactivate Users
+                            </label>
+                            <label class="permission-item">
+                                <input type="checkbox" id="perm-edit-audits"> Edit All Audits
+                            </label>
+                            <label class="permission-item">
+                                <input type="checkbox" id="perm-view-audits"> View All Audits
+                            </label>
+                            <label class="permission-item">
+                                <input type="checkbox" id="perm-create-audits"> Create Audits
+                            </label>
+                            <label class="permission-item">
+                                <input type="checkbox" id="perm-manage-lifeguards"> Manage Lifeguards
+                            </label>
+                            <label class="permission-item">
+                                <input type="checkbox" id="perm-view-activity"> View Activity Log
+                            </label>
+                            <label class="permission-item">
+                                <input type="checkbox" id="perm-export-data"> Export Data
+                            </label>
+                        </div>
+                    </div>
+                </form>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn--secondary" onclick="app.closeModal()">Cancel</button>
+                    <button type="button" class="btn btn--primary" onclick="app.saveUser()">Save User</button>
+                </div>
+            </div>
+        `;
+        
+        this.showModal(modalContent);
+        
+        // Add role change handler
+        document.getElementById('user-role').addEventListener('change', (e) => {
+            this.setDefaultPermissions(e.target.value);
+        });
+    }
+
+    openEditUserModal(userId) {
+        console.log('Opening Edit User Modal for ID:', userId);
+        const user = this.users.find(u => u.id === userId);
+        if (!user) {
+            this.showToast('User not found', 'error');
+            return;
+        }
+        
+        this.editingItem = user;
+        this.editingType = 'user';
+        
+        const modalContent = `
+            <div class="modal-header">
+                <h2>Edit User - ${user.username}</h2>
+                <button class="modal-close" onclick="app.closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="user-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="user-username">Username *</label>
+                            <input type="text" id="user-username" class="form-control" required placeholder="Enter full name" value="${user.username}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="user-password">Password *</label>
+                            <input type="password" id="user-password" class="form-control" required placeholder="Enter password" value="${user.password}">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="user-role">Role *</label>
+                        <select id="user-role" class="form-control" required>
+                            <option value="">Select Role</option>
+                            <option value="ADMIN" ${user.role === 'ADMIN' ? 'selected' : ''}>Admin</option>
+                            <option value="VIEWER" ${user.role === 'VIEWER' ? 'selected' : ''}>Viewer</option>
+                        </select>
+                    </div>
+                    
+                    <div class="permissions-section">
+                        <h4>Individual Permissions</h4>
+                        <div class="permissions-grid">
+                            <label class="permission-item">
+                                <input type="checkbox" id="perm-manage-users" ${user.individual_permissions.can_manage_users ? 'checked' : ''}> Manage Users
+                            </label>
+                            <label class="permission-item">
+                                <input type="checkbox" id="perm-create-users" ${user.individual_permissions.can_create_users ? 'checked' : ''}> Create Users
+                            </label>
+                            <label class="permission-item">
+                                <input type="checkbox" id="perm-deactivate-users" ${user.individual_permissions.can_deactivate_users ? 'checked' : ''}> Deactivate Users
+                            </label>
+                            <label class="permission-item">
+                                <input type="checkbox" id="perm-edit-audits" ${user.individual_permissions.can_edit_all_audits ? 'checked' : ''}> Edit All Audits
+                            </label>
+                            <label class="permission-item">
+                                <input type="checkbox" id="perm-view-audits" ${user.individual_permissions.can_view_all_audits ? 'checked' : ''}> View All Audits
+                            </label>
+                            <label class="permission-item">
+                                <input type="checkbox" id="perm-create-audits" ${user.individual_permissions.can_create_audits ? 'checked' : ''}> Create Audits
+                            </label>
+                            <label class="permission-item">
+                                <input type="checkbox" id="perm-manage-lifeguards" ${user.individual_permissions.can_manage_lifeguards ? 'checked' : ''}> Manage Lifeguards
+                            </label>
+                            <label class="permission-item">
+                                <input type="checkbox" id="perm-view-activity" ${user.individual_permissions.can_view_activity_log ? 'checked' : ''}> View Activity Log
+                            </label>
+                            <label class="permission-item">
+                                <input type="checkbox" id="perm-export-data" ${user.individual_permissions.can_export_data ? 'checked' : ''}> Export Data
+                            </label>
+                        </div>
+                    </div>
+                </form>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn--secondary" onclick="app.closeModal()">Cancel</button>
+                    <button type="button" class="btn btn--primary" onclick="app.saveUser()">Update User</button>
+                </div>
+            </div>
+        `;
+        
+        this.showModal(modalContent);
+        
+        // Add role change handler
+        document.getElementById('user-role').addEventListener('change', (e) => {
+            this.setDefaultPermissions(e.target.value);
+        });
+    }
+
+    setDefaultPermissions(role) {
+        const permissions = {
+            'ADMIN': {
+                'perm-edit-audits': true,
+                'perm-view-audits': true,
+                'perm-create-audits': true,
+                'perm-manage-lifeguards': true,
+                'perm-view-activity': true,
+                'perm-export-data': true
+            },
+            'VIEWER': {
+                'perm-view-audits': true
+            }
+        };
+        
+        // Clear all checkboxes first
+        document.querySelectorAll('.permission-item input[type="checkbox"]').forEach(cb => {
+            cb.checked = false;
+        });
+        
+        // Set default permissions for role
+        if (permissions[role]) {
+            Object.keys(permissions[role]).forEach(permId => {
+                const checkbox = document.getElementById(permId);
+                if (checkbox) {
+                    checkbox.checked = permissions[role][permId];
+                }
+            });
+        }
+    }
+
+    saveUser() {
+        console.log('Saving user...');
+        
+        // Get form data
+        const username = document.getElementById('user-username').value.trim();
+        const password = document.getElementById('user-password').value.trim();
+        const role = document.getElementById('user-role').value;
+        
+        // Validate required fields
+        if (!username || !password || !role) {
+            this.showToast('Please fill in all required fields', 'error');
+            return;
+        }
+        
+        // Get permissions
+        const permissions = {
+            can_manage_users: document.getElementById('perm-manage-users').checked,
+            can_create_users: document.getElementById('perm-create-users').checked,
+            can_deactivate_users: document.getElementById('perm-deactivate-users').checked,
+            can_edit_all_audits: document.getElementById('perm-edit-audits').checked,
+            can_view_all_audits: document.getElementById('perm-view-audits').checked,
+            can_create_audits: document.getElementById('perm-create-audits').checked,
+            can_manage_lifeguards: document.getElementById('perm-manage-lifeguards').checked,
+            can_view_activity_log: document.getElementById('perm-view-activity').checked,
+            can_view_admin_metrics: false,
+            can_export_data: document.getElementById('perm-export-data').checked,
+            can_modify_permissions: false
+        };
+        
+        if (this.editingItem) {
+            // Update existing user
+            const user = this.editingItem;
+            user.username = username;
+            user.password = password;
+            user.role = role;
+            user.individual_permissions = permissions;
+            
+            this.logActivity('EDIT_USER', `Updated user ${username}`);
+            this.showToast('User updated successfully', 'success');
+        } else {
+            // Create new user
+            const newUser = {
+                id: Math.max(...this.users.map(u => u.id)) + 1,
+                username: username,
+                role: role,
+                password: password,
+                active: true,
+                created_by: this.currentUser.username,
+                created_date: new Date().toISOString().split('T')[0],
+                last_login: null,
+                individual_permissions: permissions
+            };
+            
+            this.users.push(newUser);
+            this.logActivity('CREATE_USER', `Created new user ${username}`);
+            this.showToast('User created successfully', 'success');
+        }
+        
+        this.closeModal();
+        this.loadUserManagement(); // Refresh the table
+    }
+
     // Enhanced monthly statistics methods
     viewMonthlyStats(lifeguardName) {
         console.log('Viewing monthly stats for:', lifeguardName);
@@ -897,28 +1596,11 @@ class LifeguardAuditApp {
         }
     }
 
-    // Modal and action functions - these would be the full implementations
-    openAddAuditModal() {
-        this.showToast('Add Audit Modal - Complete functionality with admin dropdown available', 'info');
-    }
-
-    openEditAuditModal(auditId) {
-        this.showToast(`Edit Audit #${auditId} - Complete edit functionality with admin dropdown available`, 'info');
-    }
-
     viewAuditDetails(auditId) {
         const audit = this.audits.find(a => a.id === auditId);
         if (audit) {
             this.showToast(`Audit Details: ${audit.lifeguard_name} - ${audit.audit_type} (${audit.result}) by ${audit.auditor_name}`, 'info');
         }
-    }
-
-    openAddLifeguardModal() {
-        this.showToast('Add Lifeguard Modal - Complete functionality available', 'info');
-    }
-
-    openEditLifeguardModal(sheetNumber) {
-        this.showToast(`Edit Lifeguard ${sheetNumber} - Complete edit functionality available`, 'info');
     }
 
     viewLifeguardDetails(lifeguardName) {
@@ -930,17 +1612,16 @@ class LifeguardAuditApp {
     }
 
     confirmDeleteLifeguard(sheetNumber) {
-        if (confirm('Are you sure you want to delete this lifeguard?')) {
-            this.showToast(`Delete Lifeguard ${sheetNumber} - Complete deletion functionality available`, 'info');
+        if (confirm('Are you sure you want to delete this lifeguard? This action cannot be undone.')) {
+            const lifeguardIndex = this.lifeguards.findIndex(lg => lg.sheet_number === sheetNumber);
+            if (lifeguardIndex > -1) {
+                const lifeguard = this.lifeguards[lifeguardIndex];
+                this.lifeguards.splice(lifeguardIndex, 1);
+                this.logActivity('DELETE_LIFEGUARD', `Deleted lifeguard ${lifeguard.lifeguard_name} (Sheet ${sheetNumber})`);
+                this.showToast('Lifeguard deleted successfully', 'success');
+                this.loadLifeguards();
+            }
         }
-    }
-
-    openAddUserModal() {
-        this.showToast('Add User Modal - Complete user creation with individual permissions available', 'info');
-    }
-
-    openEditUserModal(userId) {
-        this.showToast(`Edit User ${userId} - Complete user editing available`, 'info');
     }
 
     viewUserPermissions(userId) {
@@ -988,6 +1669,10 @@ class LifeguardAuditApp {
         if (modalOverlay) {
             modalOverlay.classList.add('hidden');
         }
+        
+        // Reset editing state
+        this.editingItem = null;
+        this.editingType = null;
     }
 
     showToast(message, type = 'info') {
@@ -1077,6 +1762,6 @@ class LifeguardAuditApp {
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM loaded, initializing complete lifeguard audit system...');
+    console.log('DOM loaded, initializing complete lifeguard audit system with working edit features...');
     app = new LifeguardAuditApp();
 });
