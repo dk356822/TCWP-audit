@@ -6,6 +6,57 @@
     <title>Treasure Cove Waterpark - Lifeguard Audit System</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
+    
+    <!-- Firebase SDK v10 (Modular SDK) -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getDatabase, ref, set, get, child, onValue, push, remove, update } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyA5-61XDn6hFnT5gZPhg7hogYTKbtwKnlI",
+            authDomain: "tcwp-life.firebaseapp.com",
+            databaseURL: "https://tcwp-life-default-rtdb.firebaseio.com",
+            projectId: "tcwp-life",
+            storageBucket: "tcwp-life.firebasestorage.app",
+            messagingSenderId: "1069425868733",
+            appId: "1:1069425868733:web:56b00aff42963db25cdcd4",
+            measurementId: "G-1HGZB9C8SQ"
+        };
+
+        // Initialize Firebase
+        const firebaseApp = initializeApp(firebaseConfig);
+        const auth = getAuth(firebaseApp);
+        const database = getDatabase(firebaseApp);
+
+        // Make Firebase available globally
+        window.firebaseAuth = auth;
+        window.firebaseDb = database;
+        window.firebaseRefs = { ref, set, get, child, onValue, push, remove, update };
+        window.firebaseAuthMethods = { signInWithEmailAndPassword, signOut, onAuthStateChanged };
+
+        console.log('Firebase initialized successfully with your project configuration');
+        
+        // Set up connection state monitoring
+        const connectedRef = ref(database, '.info/connected');
+        onValue(connectedRef, (snapshot) => {
+            if (snapshot.val() === true) {
+                console.log('Connected to Firebase');
+                window.firebaseConnected = true;
+                if (window.app) {
+                    window.app.updateFirebaseStatus('✅ Connected');
+                }
+            } else {
+                console.log('Disconnected from Firebase');
+                window.firebaseConnected = false;
+                if (window.app) {
+                    window.app.updateFirebaseStatus('🔄 Reconnecting...');
+                }
+            }
+        });
+    </script>
 </head>
 <body>
     <!-- Login Screen -->
@@ -13,18 +64,31 @@
         <div class="login-container">
             <div class="login-card">
                 <h1>🏊‍♂️ Treasure Cove Lifeguard Audit System</h1>
+                <p class="firebase-notice">✨ Real-time cross-device sync via Firebase!</p>
                 <div id="login-error" class="login-error hidden"></div>
                 <form id="login-form" class="login-form">
                     <div class="form-group">
-                        <label class="form-label" for="username">Username</label>
-                        <input type="text" id="username" class="form-control" required placeholder="Enter your username">
+                        <label class="form-label" for="username">Email</label>
+                        <input type="email" id="username" class="form-control" required placeholder="Enter your email">
                     </div>
                     <div class="form-group">
                         <label class="form-label" for="password">Password</label>
                         <input type="password" id="password" class="form-control" required placeholder="Enter your password">
                     </div>
-                    <button type="submit" class="btn btn--primary btn--full-width">Login</button>
+                    <button type="submit" class="btn btn--primary btn--full-width">
+                        <span id="login-btn-text">Login</span>
+                        <span id="login-spinner" class="hidden">🔄 Logging in...</span>
+                    </button>
                 </form>
+                
+                <!-- Demo Credentials -->
+                <div class="demo-credentials">
+                    <h4>Demo Credentials:</h4>
+                    <p><strong>Admin:</strong> admin@treasurecove.com / admin123</p>
+                    <p><strong>Manager:</strong> manager@treasurecove.com / manager123</p>
+                    <p><strong>Viewer:</strong> viewer@treasurecove.com / viewer123</p>
+                    <small>Note: You'll need to create these users in Firebase Authentication first.</small>
+                </div>
             </div>
         </div>
     </div>
@@ -37,6 +101,7 @@
                 <div class="header-content">
                     <h1 class="app-title">🏊‍♂️ Treasure Cove Audit System</h1>
                     <div class="header-right">
+                        <span class="firebase-status" id="firebase-status">🔄 Connecting...</span>
                         <span class="user-info" id="current-user">Welcome, User</span>
                         <button class="btn btn--secondary btn--sm" id="logout-btn">Logout</button>
                     </div>
@@ -52,7 +117,13 @@
             <!-- Dashboard Section -->
             <section id="dashboard" class="content-section active">
                 <div class="container">
-                    <h2>Dashboard</h2>
+                    <div class="section-header">
+                        <h2>Dashboard</h2>
+                        <div class="sync-indicator">
+                            <span class="sync-status" id="sync-status">📊 Real-time dashboard</span>
+                        </div>
+                    </div>
+                    
                     <div class="stats-grid">
                         <div class="stat-card">
                             <h3>Total Lifeguards</h3>
@@ -247,6 +318,7 @@
                             <thead>
                                 <tr>
                                     <th>Username</th>
+                                    <th>Email</th>
                                     <th>Role</th>
                                     <th>Status</th>
                                     <th>Created</th>
@@ -273,6 +345,20 @@
 
     <!-- Toast Container -->
     <div id="toast-container" class="toast-container"></div>
+
+    <!-- Firebase Connection Status -->
+    <div id="connection-status" class="connection-status">
+        <span class="status-indicator" id="status-indicator">●</span>
+        <span class="status-text" id="status-text">Connecting to Firebase...</span>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Connecting to Firebase...</p>
+        </div>
+    </div>
 
     <script src="app.js"></script>
 </body>
